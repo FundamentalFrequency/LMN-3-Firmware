@@ -1,3 +1,5 @@
 .pio
 CMakeListsPrivate.txt
 cmake-build-*/ 
+.vscode
+
