@@ -1,5 +1,11 @@
 #include <Arduino.h>
 #include <Control_Surface.h>
+#include <ResponsiveAnalogRead.h>
+
+// ResponsiveAnalogRead is used to read the pitch bend
+// pin since the value is quite noisy :/
+// ControlSurface seems to have some filtering but it does not seem to be working
+const int HORIZONTAL_PB_PIN = A15;
 
 // CC values
 static constexpr int ENCODER_1 = 3;
@@ -37,6 +43,8 @@ static constexpr int DUMMY = 31;
 // Instantiate a MIDI over USB interface.
 USBMIDI_Interface midi;
 
+ResponsiveAnalogRead analog(HORIZONTAL_PB_PIN, true);
+
 CCRotaryEncoder enc1 = {
     {5, 6}, // pins
     {ENCODER_1},         // MIDI address (CC number + optional channel)
@@ -61,9 +69,11 @@ CCRotaryEncoder enc4 = {
     1,      // optional multiplier if the control isn't fast enough
 };
 
-// PBPotentiometer pitchBendPotentiometer = {
+PitchBendSender<12> pbSender;
+
+// CCPotentiometer pitchBendVertPotentiometer = {
 //     A14,        // Analog pin connected to potentiometer
-//     CHANNEL_1, // MIDI Channel 1
+//     {27},       // MIDI address (CC number + optional channel)
 // };
 
 Transposer<-4, +4>transposer(12);
@@ -102,9 +112,15 @@ CCButtonMatrix<3, 11> ccButtonmatrix = {
 };
 
 void setup() {
+    analog.setAnalogResolution(4096);
+    analog.setActivityThreshold(10.0f);
     Control_Surface.begin(); // Initialize Control Surface
 }
 
 void loop() {
     Control_Surface.loop(); // Update the Control Surface
+    analog.update();
+    if(analog.hasChanged()) {
+        pbSender.send(analog.getValue(), CHANNEL_1);
+    }
 }
