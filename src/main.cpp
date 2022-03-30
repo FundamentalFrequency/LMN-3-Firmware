@@ -99,8 +99,11 @@ Bankable::NoteButtonMatrix<2, 14> noteButtonMatrix = {
     CHANNEL_1,    // channel and cable number
 };
 
+// Note that plus and minus buttons need special care since they also control the transposer
+// When presses are detected on plus and minus as part of the matrix scanning just send a dummy CC message
+// The plus/minus buttons are handled separately as part of updatePlusMinus()
 const AddressMatrix<3, 11> ccAddresses = {{
-                                              {LOOP_BUTTON, LOOP_IN_BUTTON, LOOP_OUT_BUTTON, PLUS_BUTTON, MINUS_BUTTON, DUMMY, ENCODER_1_BUTTON, ENCODER_2_BUTTON, DUMMY, ENCODER_3_BUTTON, ENCODER_4_BUTTON},
+                                              {LOOP_BUTTON, LOOP_IN_BUTTON, LOOP_OUT_BUTTON, DUMMY, DUMMY, DUMMY, ENCODER_1_BUTTON, ENCODER_2_BUTTON, DUMMY, ENCODER_3_BUTTON, ENCODER_4_BUTTON},
                                               {CUT_BUTTON, PASTE_BUTTON, SLICE_BUTTON, SAVE_BUTTON, UNDO_BUTTON, DUMMY, DUMMY, DUMMY, DUMMY, DUMMY, DUMMY},
                                               {CONTROL_BUTTON, RECORD_BUTTON, PLAY_BUTTON, STOP_BUTTON, SETTINGS_BUTTON, TEMPO_BUTTON, MIXER_BUTTON, TRACKS_BUTTON, PLUGINS_BUTTON, MODIFIERS_BUTTON, SEQUENCERS_BUTTON}
                                          }};
@@ -112,22 +115,27 @@ CCButtonMatrix<3, 11> ccButtonmatrix = {
     CHANNEL_1,    // channel and cable number
 };
 
-bool shiftPressed = false;
 bool plusPressed = false;
 bool minusPressed = false;
+bool shiftPressed = false;
 bool shouldUpdateOctave = false;
-void updateOctave() {
+
+// There is probably a better way, but this is what I thought of first and it works ok ¯\_(ツ)_/¯
+// Hard to follow though :/
+// Its only firmware, its not that deep
+void updatePlusMinus() {
     // check if shift is down
     // getPrevState uses (col, row)
     if (ccButtonmatrix.getPrevState(0, 2) == 0) {
         shiftPressed = true;
-        // // Check if plus was released and we arent at the max octave
+        // Shift is down so send the octave change messages instead of the regular plus/minus ones
+        // Check if plus was released
         if (ccButtonmatrix.getPrevState(3, 0) == 0) {
             plusPressed = true;
             
         } else {
             if (plusPressed) {
-                if (transposer.getTransposition() != maxTransposition) {
+                if (transposer.getTransposition() < maxTransposition) {
                     transposer.setTransposition(transposer.getTransposition() + 1);
                     shouldUpdateOctave = true;
                 }
@@ -135,11 +143,12 @@ void updateOctave() {
             }
         }
 
+        // Check if minus was released
         if (ccButtonmatrix.getPrevState(4, 0) == 0) {
             minusPressed = true;
         } else {
             if (minusPressed) {
-                if (transposer.getTransposition() != minTransposition) {
+                if (transposer.getTransposition() > minTransposition) {
                     transposer.setTransposition(transposer.getTransposition() - 1);
                     shouldUpdateOctave = true;
                 }
@@ -148,15 +157,33 @@ void updateOctave() {
         }
 
         if (shouldUpdateOctave) {
-            Control_Surface.sendControlChange(MIDIAddress(OCTAVE_CHANGE, CHANNEL_1), transposer.getTransposition());
+            // Cant send negative midi values, so we need to remap to only positive values
+            map(transposer.getTransposition(), minTransposition, maxTransposition, 0, maxTransposition - minTransposition);
+            Control_Surface.sendControlChange(MIDIAddress(OCTAVE_CHANGE, CHANNEL_1), transposer.getTransposition() + maxTransposition);
             shouldUpdateOctave = false;
         }
     } else {
-        if (shiftPressed) {
-            Serial.write("Shift released");
-            shiftPressed = false;
+        // Check if plus was pressed/released
+        if (ccButtonmatrix.getPrevState(3, 0) == 0) {
+            plusPressed = true;
+            
+        } else {
+            if (plusPressed) {
+                plusPressed = false;
+                Control_Surface.sendControlChange(MIDIAddress(PLUS_BUTTON, CHANNEL_1), 0);
+            }
         }
-    }
+
+        // Check if minus was pressed/released
+        if (ccButtonmatrix.getPrevState(4, 0) == 0) {
+            minusPressed = true;
+        } else {
+            if (minusPressed) {
+                minusPressed = false;
+                Control_Surface.sendControlChange(MIDIAddress(MINUS_BUTTON, CHANNEL_1), 0);
+            }
+        }
+    } 
 }
 
 void setup() {
@@ -174,5 +201,5 @@ void loop() {
         pbSender.send(remapped, CHANNEL_1);
     }
 
-    updateOctave();
+    updatePlusMinus();
 }
