@@ -1,7 +1,8 @@
 #include <Arduino.h>
 #include <Control_Surface.h>
 #include <ResponsiveAnalogRead.h>
-
+#include <AH/Timing/MillisMicrosTimer.hpp>
+ 
 // ResponsiveAnalogRead is used to read the pitch bend
 // pin since the value is quite noisy :/
 // ControlSurface seems to have some filtering but it does not seem to be working
@@ -71,19 +72,19 @@ CCRotaryEncoder enc4 = {
 
 PitchBendSender<12> pbSender;
 
-// CCPotentiometer pitchBendVertPotentiometer = {
+// N.B This did not work on the 4.1. The reading was noisy
+// https://github.com/tttapa/Control-Surface/issues/726
+// I had to use ResponsiveAnalogRead instead
+// CCPotentiometer pitchBendPotentiometer = {
 //     A14,        // Analog pin connected to potentiometer
 //     {27},       // MIDI address (CC number + optional channel)
 // };
 
-Transposer<-4, +4>transposer(12);
-
-// IncrementDecrementSelector<transposer.getNumberOfBanks()> selector = {
-//     transposer,
-//     {36, 37},
-//     Wrap::Clamp,
-// };
-
+Timer<millis> timer = 500; // milliseconds
+const int maxTransposition = 4;
+const int minTransposition = -1 * maxTransposition;
+const int transpositionSemitones = 12;
+Transposer<minTransposition, maxTransposition>transposer(transpositionSemitones);
 
 const AddressMatrix<2, 14> noteAddresses = {{
                                                 {1, 54, 56, 58, 1, 61, 63, 1, 66, 68, 70, 1, 73, 75},
@@ -111,6 +112,53 @@ CCButtonMatrix<3, 11> ccButtonmatrix = {
     CHANNEL_1,    // channel and cable number
 };
 
+bool shiftPressed = false;
+bool plusPressed = false;
+bool minusPressed = false;
+bool shouldUpdateOctave = false;
+void updateOctave() {
+    // check if shift is down
+    // getPrevState uses (col, row)
+    if (ccButtonmatrix.getPrevState(0, 2) == 0) {
+        shiftPressed = true;
+        // // Check if plus was released and we arent at the max octave
+        if (ccButtonmatrix.getPrevState(3, 0) == 0) {
+            plusPressed = true;
+            
+        } else {
+            if (plusPressed) {
+                if (transposer.getTransposition() != maxTransposition) {
+                    transposer.setTransposition(transposer.getTransposition() + 1);
+                    shouldUpdateOctave = true;
+                }
+                plusPressed = false;
+            }
+        }
+
+        if (ccButtonmatrix.getPrevState(4, 0) == 0) {
+            minusPressed = true;
+        } else {
+            if (minusPressed) {
+                if (transposer.getTransposition() != minTransposition) {
+                    transposer.setTransposition(transposer.getTransposition() - 1);
+                    shouldUpdateOctave = true;
+                }
+                minusPressed = false;
+            }
+        }
+
+        if (shouldUpdateOctave) {
+            Control_Surface.sendControlChange(MIDIAddress(OCTAVE_CHANGE, CHANNEL_1), transposer.getTransposition());
+            shouldUpdateOctave = false;
+        }
+    } else {
+        if (shiftPressed) {
+            Serial.write("Shift released");
+            shiftPressed = false;
+        }
+    }
+}
+
 void setup() {
     analog.setAnalogResolution(4096);
     analog.setActivityThreshold(10.0f);
@@ -121,6 +169,10 @@ void loop() {
     Control_Surface.loop(); // Update the Control Surface
     analog.update();
     if(analog.hasChanged()) {
-        pbSender.send(analog.getValue(), CHANNEL_1);
+        // Remap so that pushing stick to the right increases the value
+        int remapped =  map(analog.getValue(), 0, 4095, 4095, 0);
+        pbSender.send(remapped, CHANNEL_1);
     }
+
+    updateOctave();
 }
