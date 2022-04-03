@@ -1,50 +1,9 @@
-#include <Arduino.h>
+#include <config.h>
 #include <Control_Surface.h>
 #include <ResponsiveAnalogRead.h>
-#include <AH/Timing/MillisMicrosTimer.hpp>
- 
-// ResponsiveAnalogRead is used to read the pitch bend
-// pin since the value is quite noisy :/
-// ControlSurface seems to have some filtering but it does not seem to be working
-const int HORIZONTAL_PB_PIN = A15;
-
-// CC values
-static constexpr int ENCODER_1 = 3;
-static constexpr int ENCODER_2 = 9;
-static constexpr int ENCODER_3 = 14;
-static constexpr int ENCODER_4 = 15;
-static constexpr int ENCODER_1_BUTTON = 20;
-static constexpr int ENCODER_2_BUTTON = 21;
-static constexpr int ENCODER_3_BUTTON = 22;
-static constexpr int ENCODER_4_BUTTON = 23;
-static constexpr int UNDO_BUTTON = 24;
-static constexpr int TEMPO_BUTTON = 25;
-static constexpr int SAVE_BUTTON = 26;
-static constexpr int SETTINGS_BUTTON = 85;
-static constexpr int TRACKS_BUTTON = 86;
-static constexpr int MIXER_BUTTON = 88;
-static constexpr int PLUGINS_BUTTON = 89;
-static constexpr int MODIFIERS_BUTTON = 90;
-static constexpr int SEQUENCERS_BUTTON = 102;   
-static constexpr int LOOP_IN_BUTTON = 103;
-static constexpr int LOOP_OUT_BUTTON = 104;
-static constexpr int LOOP_BUTTON = 105;
-static constexpr int CUT_BUTTON = 106;
-static constexpr int PASTE_BUTTON = 107;
-static constexpr int SLICE_BUTTON = 108;
-static constexpr int RECORD_BUTTON = 109;
-static constexpr int PLAY_BUTTON = 110;
-static constexpr int STOP_BUTTON = 111;
-static constexpr int CONTROL_BUTTON = 112;
-static constexpr int OCTAVE_CHANGE = 117;
-static constexpr int PLUS_BUTTON = 118;
-static constexpr int MINUS_BUTTON = 119;
-static constexpr int DUMMY = 31;
 
 // Instantiate a MIDI over USB interface.
 USBMIDI_Interface midi;
-
-ResponsiveAnalogRead analog(HORIZONTAL_PB_PIN, true);
 
 CCRotaryEncoder enc1 = {
     {5, 6}, // pins
@@ -70,6 +29,11 @@ CCRotaryEncoder enc4 = {
     1,      // optional multiplier if the control isn't fast enough
 };
 
+// Using a filtered analog kind of worked, but for some reason it would update whenever any other button was pressed as well
+// FilteredAnalog<10, 6, uint32_t> analog {A15};
+// Eventually just using the ResponsiveAnalogRead library worked out ok
+ResponsiveAnalogRead analog(HORIZONTAL_PB_PIN, true);
+// Note that the ADC has a 12 bit resolution by default on the 4.1
 PitchBendSender<12> pbSender;
 
 // N.B This did not work on the 4.1. The reading was noisy
@@ -80,7 +44,6 @@ PitchBendSender<12> pbSender;
 //     {27},       // MIDI address (CC number + optional channel)
 // };
 
-Timer<millis> timer = 500; // milliseconds
 const int maxTransposition = 4;
 const int minTransposition = -1 * maxTransposition;
 const int transpositionSemitones = 12;
@@ -93,8 +56,8 @@ const AddressMatrix<2, 14> noteAddresses = {{
 
 Bankable::NoteButtonMatrix<2, 14> noteButtonMatrix = {
     transposer,
-    {35, 28}, // row pins
-    {9, 8, 7, 4, 3, 2, 1, 0, 25, 14, 13, 41, 40, 36},    // column pins
+    {ROW_3, ROW_4}, // row pins
+    {COL_0, COL_1, COL_2, COL_3, COL_4, COL_5, COL_6, COL_7, COL_8, COL_9, COL_10, COL_11, COL_12, COL_13},    // column pins
     noteAddresses,    // address matrix
     CHANNEL_1,    // channel and cable number
 };
@@ -109,8 +72,8 @@ const AddressMatrix<3, 11> ccAddresses = {{
                                          }};
 
 CCButtonMatrix<3, 11> ccButtonmatrix = {
-    {24, 23, 34}, // row pins
-    {4, 3, 2, 1, 0, 25, 14, 13, 41, 40, 36},    // column pins
+    {ROW_0, ROW_1, ROW_2}, // row pins
+    {COL_3, COL_4, COL_5, COL_6, COL_7, COL_8, COL_9, COL_10, COL_11, COL_12, COL_13},    // column pins
     ccAddresses,    // address matrix
     CHANNEL_1,    // channel and cable number
 };
