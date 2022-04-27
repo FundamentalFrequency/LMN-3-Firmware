@@ -1,4 +1,4 @@
-# LMN-3-Fimrware
+# LMN-3-Firmware
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 This repository contains the Teensy 4.1 firmware that sends MIDI data to the [LMN-3-DAW](https://github.com/stonepreston/LMN-3-DAW).
