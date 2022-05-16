@@ -85,7 +85,6 @@ bool shouldUpdateOctave = false;
 
 // There is probably a better way, but this is what I thought of first and it works ok ¯\_(ツ)_/¯
 // Hard to follow though :/
-// Its only firmware, its not that deep
 void updatePlusMinus() {
     // check if shift is down
     // getPrevState uses (col, row)
@@ -100,8 +99,8 @@ void updatePlusMinus() {
             if (plusPressed) {
                 if (transposer.getTransposition() < maxTransposition) {
                     transposer.setTransposition(transposer.getTransposition() + 1);
-                    shouldUpdateOctave = true;
                 }
+                shouldUpdateOctave = true;
                 plusPressed = false;
             }
         }
@@ -113,8 +112,8 @@ void updatePlusMinus() {
             if (minusPressed) {
                 if (transposer.getTransposition() > minTransposition) {
                     transposer.setTransposition(transposer.getTransposition() - 1);
-                    shouldUpdateOctave = true;
                 }
+                shouldUpdateOctave = true;
                 minusPressed = false;
             }
         }
