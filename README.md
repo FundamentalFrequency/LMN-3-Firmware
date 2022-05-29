@@ -5,6 +5,7 @@ This repository contains the Teensy 4.1 firmware that sends MIDI data to the [LM
 
 It is a part of the larger LMN-3 project, composed of the following
 repositories:
+- [LMN-3-Build-Guide](https://github.com/stonepreston/LMN-3-Build-Guide)
 - [LMN-3-DAW](https://github.com/stonepreston/LMN-3-DAW)
 - [LMN-3-MCAD](https://github.com/stonepreston/LMN-3-MCAD)
 - [LMN-3-ECAD](https://github.com/stonepreston/LMN-3-ECAD)
