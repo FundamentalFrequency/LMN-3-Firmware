@@ -1,17 +1,7 @@
 # LMN-3-Firmware
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
-This repository contains the Teensy 4.1 firmware that sends MIDI data to the [LMN-3-DAW](https://github.com/stonepreston/LMN-3-DAW).
-
-It is a part of the larger LMN-3 project, composed of the following
-repositories:
-- [LMN-3-Build-Guide](https://github.com/stonepreston/LMN-3-Build-Guide)
-- [LMN-3-DAW](https://github.com/stonepreston/LMN-3-DAW)
-- [LMN-3-MCAD](https://github.com/stonepreston/LMN-3-MCAD)
-- [LMN-3-ECAD](https://github.com/stonepreston/LMN-3-ECAD)
-- [LMN-3-Firmware](https://github.com/stonepreston/LMN-3-Firmware)
-- [LMN-3-Emulator](https://github.com/stonepreston/LMN-3-Emulator)
-- [LMN-3-Keycaps](https://github.com/stonepreston/LMN-3-Keycaps)
+This repository contains the Teensy 4.1 firmware that sends MIDI data to the [LMN-3-DAW](https://github.com/FundamentalFrequency/LMN-3-DAW).
 
 If you would like to support the project, please consider becoming a [sponsor](https://github.com/sponsors/stonepreston).
 
