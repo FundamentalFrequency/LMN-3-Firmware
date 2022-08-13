@@ -127,8 +127,10 @@ void updatePlusMinus() {
     } else {
         // Check if plus was pressed/released
         if (ccButtonmatrix.getPrevState(3, 0) == 0) {
-            plusPressed = true;
-            Control_Surface.sendControlChange(MIDIAddress(PLUS_BUTTON, CHANNEL_1), 127);
+            if (!plusPressed) {
+                plusPressed = true;
+                Control_Surface.sendControlChange(MIDIAddress(PLUS_BUTTON, CHANNEL_1), 127);
+            }
             
         } else {
             if (plusPressed) {
@@ -139,8 +141,10 @@ void updatePlusMinus() {
 
         // Check if minus was pressed/released
         if (ccButtonmatrix.getPrevState(4, 0) == 0) {
-            minusPressed = true;
-            Control_Surface.sendControlChange(MIDIAddress(MINUS_BUTTON, CHANNEL_1), 127);
+            if (!minusPressed) {
+                minusPressed = true;
+                Control_Surface.sendControlChange(MIDIAddress(MINUS_BUTTON, CHANNEL_1), 127);
+            }
         } else {
             if (minusPressed) {
                 minusPressed = false;
